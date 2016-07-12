@@ -29,10 +29,15 @@
 
 #include "sysdeps.h"
 #include <string.h>
+
+#include "gstvaapidisplay.h"
+#include <gst/vaapi/video-format.h>
+#include <gst/vaapi/gstvaapiwindow.h>
+#include <gst/vaapi/gstvaapitexture.h>
+#include <gst/vaapi/gstvaapidisplaycache.h>
+
 #include "gstvaapiutils.h"
 #include "gstvaapivalue.h"
-#include "gstvaapidisplay.h"
-#include "gstvaapidisplay_priv.h"
 #include "gstvaapiworkarounds.h"
 #include "gstvaapiversion.h"
 
@@ -40,11 +45,46 @@
 #include "gstvaapidebug.h"
 
 GST_DEBUG_CATEGORY (gst_debug_vaapi);
+G_DEFINE_TYPE (GstVaapiDisplay, gst_vaapi_display, GST_TYPE_OBJECT);
 
-/* Ensure those symbols are actually defined in the resulting libraries */
-#undef gst_vaapi_display_ref
-#undef gst_vaapi_display_unref
-#undef gst_vaapi_display_replace
+#define GST_VAAPI_DISPLAY_GET_PRIVATE(o) \
+  (G_TYPE_INSTANCE_GET_PRIVATE((o), GST_TYPE_VAAPI_DISPLAY, GstVaapiDisplayPrivate))
+
+/**
+ * GST_VAAPI_DISPLAY_GET_CLASS_TYPE:
+ * @display: a #GstVaapiDisplay
+ *
+ * Returns the #display class type
+ * This is an internal macro that does not do any run-time type check.
+ */
+#define GST_VAAPI_DISPLAY_GET_CLASS_TYPE(display) \
+  (GST_VAAPI_DISPLAY_GET_CLASS (display)->display_type)
+
+struct _GstVaapiDisplayPrivate
+{
+  GstVaapiDisplay *parent;
+  GstVaapiDisplayCache *cache;
+  GRecMutex mutex;
+  GstVaapiDisplayType display_type;
+  gchar *display_name;
+  VADisplay display;
+  gpointer native_display;
+  guint width;
+  guint height;
+  guint width_mm;
+  guint height_mm;
+  guint par_n;
+  guint par_d;
+  GArray *decoders;
+  GArray *encoders;
+  GArray *image_formats;
+  GArray *subpicture_formats;
+  GArray *properties;
+  gchar *vendor_string;
+  guint use_foreign_display:1;
+  guint has_vpp:1;
+  guint has_profiles:1;
+};
 
 typedef struct _GstVaapiConfig GstVaapiConfig;
 struct _GstVaapiConfig
@@ -998,6 +1038,8 @@ gst_vaapi_display_init (GstVaapiDisplay * display)
   const GstVaapiDisplayClass *const dpy_class =
       GST_VAAPI_DISPLAY_GET_CLASS (display);
 
+  display->priv = priv;
+
   priv->display_type = GST_VAAPI_DISPLAY_TYPE_ANY;
   priv->par_n = 1;
   priv->par_d = 1;
@@ -1009,8 +1051,9 @@ gst_vaapi_display_init (GstVaapiDisplay * display)
 }
 
 static void
-gst_vaapi_display_finalize (GstVaapiDisplay * display)
+gst_vaapi_display_finalize (GObject * object)
 {
+  GstVaapiDisplay *display = GST_VAAPI_DISPLAY (object);
   GstVaapiDisplayPrivate *const priv = GST_VAAPI_DISPLAY_GET_PRIVATE (display);
 
   gst_vaapi_display_destroy (display);
@@ -1020,16 +1063,16 @@ gst_vaapi_display_finalize (GstVaapiDisplay * display)
 void
 gst_vaapi_display_class_init (GstVaapiDisplayClass * klass)
 {
-  GstVaapiMiniObjectClass *const object_class =
-      GST_VAAPI_MINI_OBJECT_CLASS (klass);
-  GstVaapiDisplayClass *const dpy_class = GST_VAAPI_DISPLAY_CLASS (klass);
+  GObjectClass *const object_class = G_OBJECT_CLASS (klass);
+
+  g_type_class_add_private (klass, sizeof (GstVaapiDisplayPrivate));
 
   libgstvaapi_init_once ();
 
-  object_class->size = sizeof (GstVaapiDisplay);
-  object_class->finalize = (GDestroyNotify) gst_vaapi_display_finalize;
-  dpy_class->lock = gst_vaapi_display_lock_default;
-  dpy_class->unlock = gst_vaapi_display_unlock_default;
+  object_class->finalize = gst_vaapi_display_finalize;
+
+  klass->lock = gst_vaapi_display_lock_default;
+  klass->unlock = gst_vaapi_display_unlock_default;
 }
 
 static void
@@ -1101,32 +1144,16 @@ gst_vaapi_display_properties_init (void)
       "The display contrast value", 0.0, 2.0, 1.0, G_PARAM_READWRITE);
 }
 
-static inline const GstVaapiDisplayClass *
-gst_vaapi_display_class (void)
-{
-  static GstVaapiDisplayClass g_class;
-  static gsize g_class_init = FALSE;
-
-  if (g_once_init_enter (&g_class_init)) {
-    gst_vaapi_display_class_init (&g_class);
-    g_once_init_leave (&g_class_init, TRUE);
-  }
-  return &g_class;
-}
-
 GstVaapiDisplay *
-gst_vaapi_display_new (const GstVaapiDisplayClass * klass,
+gst_vaapi_display_new (GType gtype,
     GstVaapiDisplayInitType init_type, gpointer init_value)
 {
   GstVaapiDisplay *display;
 
-  display = (GstVaapiDisplay *)
-      gst_vaapi_mini_object_new0 (GST_VAAPI_MINI_OBJECT_CLASS (klass));
-  if (!display)
-    return NULL;
+  display = g_object_new (gtype, NULL);
 
-  gst_vaapi_display_init (display);
-  if (!gst_vaapi_display_create (display, init_type, init_value))
+  if (!gst_vaapi_display_create (GST_VAAPI_DISPLAY (display), init_type,
+          init_value))
     goto error;
   return display;
 
@@ -1157,7 +1184,7 @@ gst_vaapi_display_new_with_display (VADisplay va_display)
   if (info)
     return gst_vaapi_display_ref_internal (info->display);
 
-  return gst_vaapi_display_new (gst_vaapi_display_class (),
+  return gst_vaapi_display_new (GST_TYPE_VAAPI_DISPLAY,
       GST_VAAPI_DISPLAY_INIT_FROM_VA_DISPLAY, va_display);
 }
 
@@ -1322,11 +1349,11 @@ gst_vaapi_display_get_display_type (GstVaapiDisplay * display)
 {
   g_return_val_if_fail (display != NULL, GST_VAAPI_DISPLAY_TYPE_ANY);
 
-  return GST_VAAPI_DISPLAY_VADISPLAY_TYPE (display);
+  return display->priv->display_type;
 }
 
 /**
- * gst_vaapi_display_get_display_type:
+ * gst_vaapi_display_get_display_name:
  * @display: a #GstVaapiDisplay
  *
  * Returns the @display name.
@@ -1355,6 +1382,22 @@ gst_vaapi_display_get_display (GstVaapiDisplay * display)
   g_return_val_if_fail (display != NULL, NULL);
 
   return GST_VAAPI_DISPLAY_GET_PRIVATE (display)->display;
+}
+
+/**
+ * gst_vaapi_display_get_display_cache:
+ * @display: a #GstVaapiDisplay
+ *
+ * Returns the #GstVaapiDisplayCache.
+ *
+ * Return value: the #VADisplay
+ */
+GstVaapiDisplayCache *
+gst_vaapi_display_get_display_cache (GstVaapiDisplay * display)
+{
+  g_return_val_if_fail (display != NULL, NULL);
+
+  return GST_VAAPI_DISPLAY_GET_PRIVATE (display)->cache;
 }
 
 /**
@@ -2123,7 +2166,7 @@ gst_vaapi_display_get_vendor_string (GstVaapiDisplay * display)
 
   if (!ensure_vendor_string (display))
     return NULL;
-  return display->priv.vendor_string;
+  return display->priv->vendor_string;
 }
 
 /**
@@ -2148,4 +2191,12 @@ gst_vaapi_display_has_opengl (GstVaapiDisplay * display)
   klass = GST_VAAPI_DISPLAY_GET_CLASS (display);
   return (klass->display_type == GST_VAAPI_DISPLAY_TYPE_GLX ||
       klass->display_type == GST_VAAPI_DISPLAY_TYPE_EGL);
+}
+
+gpointer
+gst_vaapi_display_get_native_display (GstVaapiDisplay * display)
+{
+  GstVaapiDisplayPrivate *const priv = display->priv;
+
+  return priv->native_display;
 }
