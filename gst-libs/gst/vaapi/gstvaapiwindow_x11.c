@@ -36,7 +36,6 @@
 #include "gstvaapipixmap_x11.h"
 #include "gstvaapipixmap_priv.h"
 #include "gstvaapidisplay_x11.h"
-#include "gstvaapidisplay_x11_priv.h"
 #include "gstvaapiutils.h"
 #include "gstvaapiutils_x11.h"
 
@@ -572,7 +571,7 @@ gst_vaapi_window_x11_new (GstVaapiDisplay * display, guint width, guint height)
 {
   GST_DEBUG ("new window, size %ux%u", width, height);
 
-  g_return_val_if_fail (GST_VAAPI_IS_DISPLAY_X11 (display), NULL);
+  g_return_val_if_fail (GST_IS_VAAPI_DISPLAY_X11 (display), NULL);
 
   return
       gst_vaapi_window_new_internal (GST_VAAPI_WINDOW_CLASS
@@ -597,7 +596,7 @@ gst_vaapi_window_x11_new_with_xid (GstVaapiDisplay * display, Window xid)
 {
   GST_DEBUG ("new window from xid 0x%08x", (guint) xid);
 
-  g_return_val_if_fail (GST_VAAPI_IS_DISPLAY_X11 (display), NULL);
+  g_return_val_if_fail (GST_IS_VAAPI_DISPLAY_X11 (display), NULL);
   g_return_val_if_fail (xid != None, NULL);
 
   return gst_vaapi_window_new_internal (GST_VAAPI_WINDOW_CLASS

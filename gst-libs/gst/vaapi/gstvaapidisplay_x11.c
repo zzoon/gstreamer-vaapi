@@ -30,10 +30,9 @@
 #include "sysdeps.h"
 #include <string.h>
 #include "gstvaapiutils.h"
-#include "gstvaapidisplay_priv.h"
 #include "gstvaapidisplay_x11.h"
-#include "gstvaapidisplay_x11_priv.h"
 #include "gstvaapiwindow_x11.h"
+#include "gstvaapidisplaycache.h"
 
 #ifdef HAVE_XRANDR
 # include <X11/extensions/Xrandr.h>
@@ -45,6 +44,25 @@
 
 #define DEBUG 1
 #include "gstvaapidebug.h"
+
+G_DEFINE_TYPE (GstVaapiDisplayX11, gst_vaapi_display_x11,
+    GST_TYPE_VAAPI_DISPLAY);
+
+#define GST_VAAPI_DISPLAY_X11_GET_PRIVATE(o) \
+    (G_TYPE_INSTANCE_GET_PRIVATE((o), GST_TYPE_VAAPI_DISPLAY_X11, GstVaapiDisplayX11Private))
+
+struct _GstVaapiDisplayX11Private
+{
+  gchar *display_name;
+  Display *x11_display;
+  int x11_screen;
+  GArray *pixmap_formats;
+  guint use_foreign_display:1;  // Foreign native_display?
+  guint use_xrandr:1;
+  guint has_xrender:1;          // Has XRender extension?
+  guint synchronous:1;
+};
+
 
 static const guint g_display_types = 1U << GST_VAAPI_DISPLAY_TYPE_X11;
 
@@ -114,7 +132,7 @@ get_default_display_name (void)
 static const gchar *
 get_display_name (GstVaapiDisplayX11 * display)
 {
-  GstVaapiDisplayX11Private *const priv = &display->priv;
+  GstVaapiDisplayX11Private *const priv = display->priv;
   const gchar *display_name = priv->display_name;
 
   if (!display_name || *display_name == '\0')
@@ -126,7 +144,7 @@ get_display_name (GstVaapiDisplayX11 * display)
 static gboolean
 set_display_name (GstVaapiDisplayX11 * display, const gchar * display_name)
 {
-  GstVaapiDisplayX11Private *const priv = &display->priv;
+  GstVaapiDisplayX11Private *const priv = display->priv;
 
   g_free (priv->display_name);
 
@@ -143,7 +161,7 @@ set_display_name (GstVaapiDisplayX11 * display, const gchar * display_name)
 static void
 set_synchronous (GstVaapiDisplayX11 * display, gboolean synchronous)
 {
-  GstVaapiDisplayX11Private *const priv = &display->priv;
+  GstVaapiDisplayX11Private *const priv = display->priv;
 
   if (priv->synchronous != synchronous) {
     priv->synchronous = synchronous;
@@ -160,7 +178,7 @@ static void
 check_extensions (GstVaapiDisplayX11 * display)
 {
   GstVaapiDisplayX11Private *const priv =
-      GST_VAAPI_DISPLAY_X11_PRIVATE (display);
+      GST_VAAPI_DISPLAY_X11_GET_PRIVATE (display);
   int evt_base, err_base;
 
 #ifdef HAVE_XRANDR
@@ -178,7 +196,7 @@ gst_vaapi_display_x11_bind_display (GstVaapiDisplay * base_display,
     gpointer native_display)
 {
   GstVaapiDisplayX11 *const display = GST_VAAPI_DISPLAY_X11_CAST (base_display);
-  GstVaapiDisplayX11Private *const priv = &display->priv;
+  GstVaapiDisplayX11Private *const priv = display->priv;
 
   priv->x11_display = native_display;
   priv->x11_screen = DefaultScreen (native_display);
@@ -196,7 +214,7 @@ gst_vaapi_display_x11_open_display (GstVaapiDisplay * base_display,
     const gchar * name)
 {
   GstVaapiDisplayX11 *const display = GST_VAAPI_DISPLAY_X11_CAST (base_display);
-  GstVaapiDisplayX11Private *const priv = &display->priv;
+  GstVaapiDisplayX11Private *const priv = display->priv;
   GstVaapiDisplayCache *const cache = GST_VAAPI_DISPLAY_CACHE (display);
   const GstVaapiDisplayInfo *info;
 
@@ -224,7 +242,7 @@ static void
 gst_vaapi_display_x11_close_display (GstVaapiDisplay * display)
 {
   GstVaapiDisplayX11Private *const priv =
-      GST_VAAPI_DISPLAY_X11_PRIVATE (display);
+      GST_VAAPI_DISPLAY_X11_GET_PRIVATE (display);
 
   if (priv->pixmap_formats) {
     g_array_free (priv->pixmap_formats, TRUE);
@@ -247,7 +265,7 @@ static void
 gst_vaapi_display_x11_sync (GstVaapiDisplay * display)
 {
   GstVaapiDisplayX11Private *const priv =
-      GST_VAAPI_DISPLAY_X11_PRIVATE (display);
+      GST_VAAPI_DISPLAY_X11_GET_PRIVATE (display);
 
   if (priv->x11_display) {
     GST_VAAPI_DISPLAY_LOCK (display);
@@ -260,7 +278,7 @@ static void
 gst_vaapi_display_x11_flush (GstVaapiDisplay * display)
 {
   GstVaapiDisplayX11Private *const priv =
-      GST_VAAPI_DISPLAY_X11_PRIVATE (display);
+      GST_VAAPI_DISPLAY_X11_GET_PRIVATE (display);
 
   if (priv->x11_display) {
     GST_VAAPI_DISPLAY_LOCK (display);
@@ -274,7 +292,7 @@ gst_vaapi_display_x11_get_display_info (GstVaapiDisplay * display,
     GstVaapiDisplayInfo * info)
 {
   GstVaapiDisplayX11Private *const priv =
-      GST_VAAPI_DISPLAY_X11_PRIVATE (display);
+      GST_VAAPI_DISPLAY_X11_GET_PRIVATE (display);
   GstVaapiDisplayCache *const cache = GST_VAAPI_DISPLAY_CACHE (display);
   const GstVaapiDisplayInfo *cached_info;
 
@@ -303,7 +321,7 @@ gst_vaapi_display_x11_get_size (GstVaapiDisplay * display,
     guint * pwidth, guint * pheight)
 {
   GstVaapiDisplayX11Private *const priv =
-      GST_VAAPI_DISPLAY_X11_PRIVATE (display);
+      GST_VAAPI_DISPLAY_X11_GET_PRIVATE (display);
 
   if (!priv->x11_display)
     return;
@@ -320,7 +338,7 @@ gst_vaapi_display_x11_get_size_mm (GstVaapiDisplay * display,
     guint * pwidth, guint * pheight)
 {
   GstVaapiDisplayX11Private *const priv =
-      GST_VAAPI_DISPLAY_X11_PRIVATE (display);
+      GST_VAAPI_DISPLAY_X11_GET_PRIVATE (display);
   guint width_mm, height_mm;
 
   if (!priv->x11_display)
@@ -381,13 +399,10 @@ gst_vaapi_display_x11_create_window (GstVaapiDisplay * display, GstVaapiID id,
 void
 gst_vaapi_display_x11_class_init (GstVaapiDisplayX11Class * klass)
 {
-  GstVaapiMiniObjectClass *const object_class =
-      GST_VAAPI_MINI_OBJECT_CLASS (klass);
+  g_type_class_add_private (klass, sizeof (GstVaapiDisplayX11Private));
+
   GstVaapiDisplayClass *const dpy_class = GST_VAAPI_DISPLAY_CLASS (klass);
 
-  gst_vaapi_display_class_init (&klass->parent_class);
-
-  object_class->size = sizeof (GstVaapiDisplayX11);
   dpy_class->display_type = GST_VAAPI_DISPLAY_TYPE_X11;
   dpy_class->bind_display = gst_vaapi_display_x11_bind_display;
   dpy_class->open_display = gst_vaapi_display_x11_open_display;
@@ -400,17 +415,13 @@ gst_vaapi_display_x11_class_init (GstVaapiDisplayX11Class * klass)
   dpy_class->create_window = gst_vaapi_display_x11_create_window;
 }
 
-static inline const GstVaapiDisplayClass *
-gst_vaapi_display_x11_class (void)
+static void
+gst_vaapi_display_x11_init (GstVaapiDisplayX11 * display)
 {
-  static GstVaapiDisplayX11Class g_class;
-  static gsize g_class_init = FALSE;
+  GstVaapiDisplayX11Private *const priv =
+      GST_VAAPI_DISPLAY_X11_GET_PRIVATE (display);
 
-  if (g_once_init_enter (&g_class_init)) {
-    gst_vaapi_display_x11_class_init (&g_class);
-    g_once_init_leave (&g_class_init, TRUE);
-  }
-  return GST_VAAPI_DISPLAY_CLASS (&g_class);
+  display->priv = priv;
 }
 
 /**
@@ -423,10 +434,11 @@ gst_vaapi_display_x11_class (void)
  *
  * Return value: a newly allocated #GstVaapiDisplay object
  */
-GstVaapiDisplay *
+GstVaapiDisplayX11 *
 gst_vaapi_display_x11_new (const gchar * display_name)
 {
-  return gst_vaapi_display_new (gst_vaapi_display_x11_class (),
+  return (GstVaapiDisplayX11 *)
+      gst_vaapi_display_new (GST_TYPE_VAAPI_DISPLAY_X11,
       GST_VAAPI_DISPLAY_INIT_FROM_DISPLAY_NAME, (gpointer) display_name);
 }
 
@@ -441,12 +453,13 @@ gst_vaapi_display_x11_new (const gchar * display_name)
  *
  * Return value: a newly allocated #GstVaapiDisplay object
  */
-GstVaapiDisplay *
+GstVaapiDisplayX11 *
 gst_vaapi_display_x11_new_with_display (Display * x11_display)
 {
   g_return_val_if_fail (x11_display, NULL);
 
-  return gst_vaapi_display_new (gst_vaapi_display_x11_class (),
+  return (GstVaapiDisplayX11 *)
+      gst_vaapi_display_new (GST_TYPE_VAAPI_DISPLAY_X11,
       GST_VAAPI_DISPLAY_INIT_FROM_NATIVE_DISPLAY, x11_display);
 }
 
@@ -463,7 +476,7 @@ gst_vaapi_display_x11_new_with_display (Display * x11_display)
 Display *
 gst_vaapi_display_x11_get_display (GstVaapiDisplayX11 * display)
 {
-  g_return_val_if_fail (GST_VAAPI_IS_DISPLAY_X11 (display), NULL);
+  g_return_val_if_fail (GST_IS_VAAPI_DISPLAY_X11 (display), NULL);
 
   return GST_VAAPI_DISPLAY_XDISPLAY (display);
 }
@@ -481,7 +494,7 @@ gst_vaapi_display_x11_get_display (GstVaapiDisplayX11 * display)
 int
 gst_vaapi_display_x11_get_screen (GstVaapiDisplayX11 * display)
 {
-  g_return_val_if_fail (GST_VAAPI_IS_DISPLAY_X11 (display), -1);
+  g_return_val_if_fail (GST_IS_VAAPI_DISPLAY_X11 (display), -1);
 
   return GST_VAAPI_DISPLAY_XSCREEN (display);
 }
@@ -501,7 +514,7 @@ void
 gst_vaapi_display_x11_set_synchronous (GstVaapiDisplayX11 * display,
     gboolean synchronous)
 {
-  g_return_if_fail (GST_VAAPI_IS_DISPLAY_X11 (display));
+  g_return_if_fail (GST_IS_VAAPI_DISPLAY_X11 (display));
 
   set_synchronous (display, synchronous);
 }
@@ -542,7 +555,7 @@ static gboolean
 ensure_pix_fmts (GstVaapiDisplayX11 * display)
 {
   GstVaapiDisplayX11Private *const priv =
-      GST_VAAPI_DISPLAY_X11_PRIVATE (display);
+      GST_VAAPI_DISPLAY_X11_GET_PRIVATE (display);
   XPixmapFormatValues *pix_fmts;
   int i, n, num_pix_fmts;
 
@@ -584,7 +597,7 @@ gst_vaapi_display_x11_get_pixmap_format (GstVaapiDisplayX11 * display,
 {
   if (ensure_pix_fmts (display)) {
     GstVaapiDisplayX11Private *const priv =
-        GST_VAAPI_DISPLAY_X11_PRIVATE (display);
+        GST_VAAPI_DISPLAY_X11_GET_PRIVATE (display);
     guint i;
 
     for (i = 0; i < priv->pixmap_formats->len; i++) {
@@ -604,7 +617,7 @@ gst_vaapi_display_x11_get_pixmap_depth (GstVaapiDisplayX11 * display,
 {
   if (ensure_pix_fmts (display)) {
     GstVaapiDisplayX11Private *const priv =
-        GST_VAAPI_DISPLAY_X11_PRIVATE (display);
+        GST_VAAPI_DISPLAY_X11_GET_PRIVATE (display);
     guint i;
 
     for (i = 0; i < priv->pixmap_formats->len; i++) {
@@ -615,4 +628,27 @@ gst_vaapi_display_x11_get_pixmap_depth (GstVaapiDisplayX11 * display,
     }
   }
   return 0;
+}
+
+Display *
+gst_vaapi_display_x11_get_xdisplay (GstVaapiDisplayX11 * display)
+{
+  GstVaapiDisplayX11Private *const priv = display->priv;
+  return priv->x11_display;
+}
+
+int
+gst_vaapi_display_x11_get_xscreen (GstVaapiDisplayX11 * display)
+{
+  GstVaapiDisplayX11Private *const priv = display->priv;
+  return priv->x11_screen;
+}
+
+gboolean
+gst_vaapi_display_x11_has_xrender (GstVaapiDisplay * display)
+{
+  GstVaapiDisplayX11 *_display = GST_VAAPI_DISPLAY_X11 (display);
+  GstVaapiDisplayX11Private *const priv = _display->priv;
+
+  return priv->has_xrender;
 }
