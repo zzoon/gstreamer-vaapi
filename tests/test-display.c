@@ -286,7 +286,7 @@ main (int argc, char *argv[])
   g_print ("# Create display with gst_vaapi_display_drm_new()\n");
   g_print ("#\n");
   {
-    display = gst_vaapi_display_drm_new (NULL);
+    display = (GstVaapiDisplay *) gst_vaapi_display_drm_new (NULL);
     if (!display)
       g_error ("could not create Gst/VA display");
 
@@ -305,7 +305,8 @@ main (int argc, char *argv[])
     if (drm_device < 0)
       g_error ("could not open DRM device");
 
-    display = gst_vaapi_display_drm_new_with_device (drm_device);
+    display =
+        (GstVaapiDisplay *) gst_vaapi_display_drm_new_with_device (drm_device);
     if (!display)
       g_error ("could not create Gst/VA display");
 

@@ -34,11 +34,25 @@
 #include <va/va_drm.h>
 #include "gstvaapiutils.h"
 #include "gstvaapidisplay_drm.h"
-#include "gstvaapidisplay_drm_priv.h"
 #include "gstvaapiwindow_drm.h"
+#include "gstvaapidisplaycache.h"
 
 #define DEBUG 1
 #include "gstvaapidebug.h"
+
+G_DEFINE_TYPE (GstVaapiDisplayDRM, gst_vaapi_display_drm,
+    GST_TYPE_VAAPI_DISPLAY);
+
+#define GST_VAAPI_DISPLAY_DRM_GET_PRIVATE(o) \
+    (G_TYPE_INSTANCE_GET_PRIVATE((o), GST_TYPE_VAAPI_DISPLAY_DRM, GstVaapiDisplayDRMPrivate))
+
+struct _GstVaapiDisplayDRMPrivate
+{
+  gchar *device_path_default;
+  gchar *device_path;
+  gint drm_device;
+  guint use_foreign_display:1;  // Foreign native_display?
+};
 
 static const guint g_display_types = 1U << GST_VAAPI_DISPLAY_TYPE_DRM;
 
@@ -56,7 +70,7 @@ static const gchar *
 get_default_device_path (GstVaapiDisplay * display)
 {
   GstVaapiDisplayDRMPrivate *const priv =
-      GST_VAAPI_DISPLAY_DRM_PRIVATE (display);
+      GST_VAAPI_DISPLAY_DRM_GET_PRIVATE (display);
   const gchar *syspath, *devpath;
   struct udev *udev = NULL;
   struct udev_device *device, *parent;
@@ -122,7 +136,7 @@ static const gchar *
 get_device_path (GstVaapiDisplay * display)
 {
   GstVaapiDisplayDRMPrivate *const priv =
-      GST_VAAPI_DISPLAY_DRM_PRIVATE (display);
+      GST_VAAPI_DISPLAY_DRM_GET_PRIVATE (display);
   const gchar *device_path = priv->device_path;
 
   if (!device_path || *device_path == '\0')
@@ -135,7 +149,7 @@ static gboolean
 set_device_path (GstVaapiDisplay * display, const gchar * device_path)
 {
   GstVaapiDisplayDRMPrivate *const priv =
-      GST_VAAPI_DISPLAY_DRM_PRIVATE (display);
+      GST_VAAPI_DISPLAY_DRM_GET_PRIVATE (display);
 
   g_free (priv->device_path);
   priv->device_path = NULL;
@@ -154,7 +168,7 @@ static gboolean
 set_device_path_from_fd (GstVaapiDisplay * display, gint drm_device)
 {
   GstVaapiDisplayDRMPrivate *const priv =
-      GST_VAAPI_DISPLAY_DRM_PRIVATE (display);
+      GST_VAAPI_DISPLAY_DRM_GET_PRIVATE (display);
   const gchar *busid, *path, *str;
   gsize busid_length, path_length;
   struct udev *udev = NULL;
@@ -224,7 +238,7 @@ gst_vaapi_display_drm_bind_display (GstVaapiDisplay * display,
     gpointer native_display)
 {
   GstVaapiDisplayDRMPrivate *const priv =
-      GST_VAAPI_DISPLAY_DRM_PRIVATE (display);
+      GST_VAAPI_DISPLAY_DRM_GET_PRIVATE (display);
 
   priv->drm_device = GPOINTER_TO_INT (native_display);
   priv->use_foreign_display = TRUE;
@@ -239,7 +253,7 @@ gst_vaapi_display_drm_open_display (GstVaapiDisplay * display,
     const gchar * name)
 {
   GstVaapiDisplayDRMPrivate *const priv =
-      GST_VAAPI_DISPLAY_DRM_PRIVATE (display);
+      GST_VAAPI_DISPLAY_DRM_GET_PRIVATE (display);
   GstVaapiDisplayCache *const cache = GST_VAAPI_DISPLAY_CACHE (display);
   const GstVaapiDisplayInfo *info;
 
@@ -264,7 +278,7 @@ static void
 gst_vaapi_display_drm_close_display (GstVaapiDisplay * display)
 {
   GstVaapiDisplayDRMPrivate *const priv =
-      GST_VAAPI_DISPLAY_DRM_PRIVATE (display);
+      GST_VAAPI_DISPLAY_DRM_GET_PRIVATE (display);
 
   if (priv->drm_device >= 0) {
     if (!priv->use_foreign_display)
@@ -288,7 +302,7 @@ gst_vaapi_display_drm_get_display_info (GstVaapiDisplay * display,
     GstVaapiDisplayInfo * info)
 {
   GstVaapiDisplayDRMPrivate *const priv =
-      GST_VAAPI_DISPLAY_DRM_PRIVATE (display);
+      GST_VAAPI_DISPLAY_DRM_GET_PRIVATE (display);
   GstVaapiDisplayCache *const cache = GST_VAAPI_DISPLAY_CACHE (display);
   const GstVaapiDisplayInfo *cached_info;
 
@@ -321,44 +335,28 @@ gst_vaapi_display_drm_create_window (GstVaapiDisplay * display, GstVaapiID id,
 }
 
 static void
-gst_vaapi_display_drm_init (GstVaapiDisplay * display)
+gst_vaapi_display_drm_init (GstVaapiDisplayDRM * display)
 {
   GstVaapiDisplayDRMPrivate *const priv =
-      GST_VAAPI_DISPLAY_DRM_PRIVATE (display);
+      GST_VAAPI_DISPLAY_DRM_GET_PRIVATE (display);
 
+  display->priv = priv;
   priv->drm_device = -1;
 }
 
 static void
 gst_vaapi_display_drm_class_init (GstVaapiDisplayDRMClass * klass)
 {
-  GstVaapiMiniObjectClass *const object_class =
-      GST_VAAPI_MINI_OBJECT_CLASS (klass);
   GstVaapiDisplayClass *const dpy_class = GST_VAAPI_DISPLAY_CLASS (klass);
 
-  gst_vaapi_display_class_init (&klass->parent_class);
+  g_type_class_add_private (klass, sizeof (GstVaapiDisplayDRMPrivate));
 
-  object_class->size = sizeof (GstVaapiDisplayDRM);
   dpy_class->display_type = GST_VAAPI_DISPLAY_TYPE_DRM;
-  dpy_class->init = gst_vaapi_display_drm_init;
   dpy_class->bind_display = gst_vaapi_display_drm_bind_display;
   dpy_class->open_display = gst_vaapi_display_drm_open_display;
   dpy_class->close_display = gst_vaapi_display_drm_close_display;
   dpy_class->get_display = gst_vaapi_display_drm_get_display_info;
   dpy_class->create_window = gst_vaapi_display_drm_create_window;
-}
-
-static inline const GstVaapiDisplayClass *
-gst_vaapi_display_drm_class (void)
-{
-  static GstVaapiDisplayDRMClass g_class;
-  static gsize g_class_init = FALSE;
-
-  if (g_once_init_enter (&g_class_init)) {
-    gst_vaapi_display_drm_class_init (&g_class);
-    g_once_init_leave (&g_class_init, TRUE);
-  }
-  return GST_VAAPI_DISPLAY_CLASS (&g_class);
 }
 
 /**
@@ -375,7 +373,7 @@ gst_vaapi_display_drm_class (void)
  *
  * Return value: a newly allocated #GstVaapiDisplay object
  */
-GstVaapiDisplay *
+GstVaapiDisplayDRM *
 gst_vaapi_display_drm_new (const gchar * device_path)
 {
   GstVaapiDisplay *display;
@@ -393,13 +391,13 @@ gst_vaapi_display_drm_new (const gchar * device_path)
 
   for (i = 0; i < num_types; i++) {
     g_drm_device_type = types[i];
-    display = gst_vaapi_display_new (gst_vaapi_display_drm_class (),
+    display = gst_vaapi_display_new (GST_TYPE_VAAPI_DISPLAY_DRM,
         GST_VAAPI_DISPLAY_INIT_FROM_DISPLAY_NAME, (gpointer) device_path);
     if (display || device_path)
       break;
   }
   g_mutex_unlock (&g_drm_device_type_lock);
-  return display;
+  return (GstVaapiDisplayDRM *) display;
 }
 
 /**
@@ -413,12 +411,13 @@ gst_vaapi_display_drm_new (const gchar * device_path)
  *
  * Return value: a newly allocated #GstVaapiDisplay object
  */
-GstVaapiDisplay *
+GstVaapiDisplayDRM *
 gst_vaapi_display_drm_new_with_device (gint device)
 {
   g_return_val_if_fail (device >= 0, NULL);
 
-  return gst_vaapi_display_new (gst_vaapi_display_drm_class (),
+  return (GstVaapiDisplayDRM *)
+      gst_vaapi_display_new (GST_TYPE_VAAPI_DISPLAY_DRM,
       GST_VAAPI_DISPLAY_INIT_FROM_NATIVE_DISPLAY, GINT_TO_POINTER (device));
 }
 
@@ -435,9 +434,9 @@ gst_vaapi_display_drm_new_with_device (gint device)
 gint
 gst_vaapi_display_drm_get_device (GstVaapiDisplayDRM * display)
 {
-  g_return_val_if_fail (GST_VAAPI_IS_DISPLAY_DRM (display), -1);
+  g_return_val_if_fail (GST_IS_VAAPI_DISPLAY_DRM (display), -1);
 
-  return GST_VAAPI_DISPLAY_DRM_DEVICE (display);
+  return display->priv->drm_device;
 }
 
 /**
@@ -456,7 +455,7 @@ gst_vaapi_display_drm_get_device (GstVaapiDisplayDRM * display)
 const gchar *
 gst_vaapi_display_drm_get_device_path (GstVaapiDisplayDRM * display)
 {
-  g_return_val_if_fail (GST_VAAPI_IS_DISPLAY_DRM (display), NULL);
+  g_return_val_if_fail (GST_IS_VAAPI_DISPLAY_DRM (display), NULL);
 
   return get_device_path (GST_VAAPI_DISPLAY_CAST (display));
 }

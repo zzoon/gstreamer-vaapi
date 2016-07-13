@@ -109,7 +109,7 @@ main (int argc, char *argv[])
   gst_init (&argc, &argv);
 
 #if USE_DRM
-  display = gst_vaapi_display_drm_new (NULL);
+  display = (GstVaapiDisplay *) gst_vaapi_display_drm_new (NULL);
   if (!display)
     g_error ("could not create Gst/VA (DRM) display");
 
