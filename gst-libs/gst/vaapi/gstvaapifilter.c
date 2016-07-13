@@ -25,7 +25,6 @@
 #include "gstvaapiutils.h"
 #include "gstvaapivalue.h"
 #include "gstvaapiminiobject.h"
-#include "gstvaapidisplay_priv.h"
 #include "gstvaapisurface_priv.h"
 
 #if USE_VA_VPP

@@ -26,7 +26,6 @@
 #include "gstvaapiencoder.h"
 #include "gstvaapiencoder_priv.h"
 #include "gstvaapicontext.h"
-#include "gstvaapidisplay_priv.h"
 #include "gstvaapiutils.h"
 #include "gstvaapiutils_core.h"
 #include "gstvaapivalue.h"

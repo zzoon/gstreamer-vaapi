@@ -139,7 +139,7 @@ main (int argc, char *argv[])
 #endif
 
 #if USE_X11
-  display = gst_vaapi_display_x11_new (NULL);
+  display = (GstVaapiDisplay *) gst_vaapi_display_x11_new (NULL);
   if (!display)
     g_error ("could not create Gst/VA display");
 
@@ -204,7 +204,7 @@ main (int argc, char *argv[])
 #endif
 
 #if USE_WAYLAND
-  display = gst_vaapi_display_wayland_new (NULL);
+  display = (GstVaapiDisplay *) gst_vaapi_display_wayland_new (NULL);
   if (!display)
     g_error ("could not create Gst/VA (Wayland) display");
 

@@ -24,6 +24,8 @@
 
 #include "gst/vaapi/sysdeps.h"
 #include <gst/video/video.h>
+#include <gst/vaapi/video-format.h>
+
 #if USE_DRM
 # include <gst/vaapi/gstvaapidisplay_drm.h>
 # include <va/va_drm.h>
@@ -345,12 +347,12 @@ main (int argc, char *argv[])
   g_print ("# Create display with gst_vaapi_display_x11_new()\n");
   g_print ("#\n");
   {
-    display = gst_vaapi_display_x11_new (NULL);
+    display = (GstVaapiDisplay *) gst_vaapi_display_x11_new (NULL);
     if (!display)
       g_error ("could not create Gst/VA display");
 
     if (CHECK_DISPLAY_CACHE) {
-      display2 = gst_vaapi_display_x11_new (NULL);
+      display2 = (GstVaapiDisplay *) gst_vaapi_display_x11_new (NULL);
 
       /* Check for the same X11 display */
       g_assert (gst_vaapi_display_x11_get_display (GST_VAAPI_DISPLAY_X11
@@ -364,7 +366,7 @@ main (int argc, char *argv[])
       gst_vaapi_display_unref (display2);
 
 #if USE_GLX
-      display2 = gst_vaapi_display_glx_new (NULL);
+      display2 = (GstVaapiDisplay *) gst_vaapi_display_glx_new (NULL);
 
       /* Check for the different X11 display */
       /* XXX: it is also desired to cache underlying X11 displays */
@@ -401,12 +403,14 @@ main (int argc, char *argv[])
     if (!x11_display)
       g_error ("could not create X11 display");
 
-    display = gst_vaapi_display_x11_new_with_display (x11_display);
+    display = (GstVaapiDisplay *)
+        gst_vaapi_display_x11_new_with_display (x11_display);
     if (!display)
       g_error ("could not create Gst/VA display");
 
     if (CHECK_DISPLAY_CACHE) {
-      display2 = gst_vaapi_display_x11_new_with_display (x11_display);
+      display2 = (GstVaapiDisplay *)
+          gst_vaapi_display_x11_new_with_display (x11_display);
 
       /* Check for the same VA display */
       g_assert (gst_vaapi_display_get_display (display) ==
@@ -453,12 +457,12 @@ main (int argc, char *argv[])
   g_print ("# Create display with gst_vaapi_display_glx_new()\n");
   g_print ("#\n");
   {
-    display = gst_vaapi_display_glx_new (NULL);
+    display = (GstVaapiDisplay *) gst_vaapi_display_glx_new (NULL);
     if (!display)
       g_error ("could not create Gst/VA display");
 
     if (CHECK_DISPLAY_CACHE) {
-      display2 = gst_vaapi_display_glx_new (NULL);
+      display2 = (GstVaapiDisplay *) gst_vaapi_display_glx_new (NULL);
 
       /* Check for the same X11 display */
       g_assert (gst_vaapi_display_x11_get_display (GST_VAAPI_DISPLAY_X11
@@ -471,7 +475,7 @@ main (int argc, char *argv[])
 
       gst_vaapi_display_unref (display2);
 
-      display2 = gst_vaapi_display_x11_new (NULL);
+      display2 = (GstVaapiDisplay *) gst_vaapi_display_x11_new (NULL);
 
       /* Check for the same X11 display */
       g_assert (gst_vaapi_display_x11_get_display (GST_VAAPI_DISPLAY_X11
@@ -506,7 +510,8 @@ main (int argc, char *argv[])
     if (!x11_display)
       g_error ("could not create X11 display");
 
-    display = gst_vaapi_display_glx_new_with_display (x11_display);
+    display = (GstVaapiDisplay *)
+        gst_vaapi_display_glx_new_with_display (x11_display);
     if (!display)
       g_error ("could not create Gst/VA display");
 
@@ -550,7 +555,7 @@ main (int argc, char *argv[])
   g_print ("# Create display with gst_vaapi_display_wayland_new()\n");
   g_print ("#\n");
   {
-    display = gst_vaapi_display_wayland_new (NULL);
+    display = (GstVaapiDisplay *) gst_vaapi_display_wayland_new (NULL);
     if (!display)
       g_error ("could not create Gst/VA display");
 

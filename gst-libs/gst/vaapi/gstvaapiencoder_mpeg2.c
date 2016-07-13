@@ -34,7 +34,6 @@
 
 #include "gstvaapicontext.h"
 #include "gstvaapisurface.h"
-#include "gstvaapidisplay_priv.h"
 
 #define DEBUG 1
 #include "gstvaapidebug.h"

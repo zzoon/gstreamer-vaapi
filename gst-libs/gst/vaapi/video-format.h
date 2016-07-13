@@ -26,6 +26,7 @@
 #define GST_VAAPI_VIDEO_FORMAT_H
 
 #include <gst/video/video.h>
+#include <va/va.h>
 
 G_BEGIN_DECLS
 

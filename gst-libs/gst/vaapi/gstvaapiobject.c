@@ -31,7 +31,6 @@
 #include "gstvaapiobject.h"
 #include "gstvaapiobject_priv.h"
 #include "gstvaapiminiobject.h"
-#include "gstvaapidisplay_priv.h"
 
 #define DEBUG 1
 #include "gstvaapidebug.h"

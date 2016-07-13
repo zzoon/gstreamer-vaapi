@@ -30,7 +30,6 @@
 #include "gstvaapidecoder_vp9.h"
 #include "gstvaapidecoder_objects.h"
 #include "gstvaapidecoder_priv.h"
-#include "gstvaapidisplay_priv.h"
 #include "gstvaapiobject_priv.h"
 
 #include "gstvaapicompat.h"

@@ -31,7 +31,7 @@
 #include "gstvaapicompat.h"
 #include "gstvaapicontext.h"
 #include "gstvaapicontext_overlay.h"
-#include "gstvaapidisplay_priv.h"
+#include "gstvaapidisplay.h"
 #include "gstvaapiobject_priv.h"
 #include "gstvaapisurface.h"
 #include "gstvaapisurface_priv.h"

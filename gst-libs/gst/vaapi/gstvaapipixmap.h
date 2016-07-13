@@ -24,7 +24,6 @@
 #define GST_VAAPI_PIXMAP_H
 
 #include <gst/vaapi/gstvaapitypes.h>
-#include <gst/vaapi/gstvaapiobject.h>
 #include <gst/vaapi/gstvaapidisplay.h>
 #include <gst/vaapi/gstvaapisurface.h>
 #include <gst/vaapi/video-format.h>

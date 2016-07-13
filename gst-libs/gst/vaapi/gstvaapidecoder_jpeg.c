@@ -33,7 +33,6 @@
 #include "gstvaapidecoder_jpeg.h"
 #include "gstvaapidecoder_objects.h"
 #include "gstvaapidecoder_priv.h"
-#include "gstvaapidisplay_priv.h"
 #include "gstvaapiobject_priv.h"
 
 #ifdef HAVE_VA_VA_DEC_JPEG_H

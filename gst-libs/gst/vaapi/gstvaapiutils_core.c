@@ -26,7 +26,6 @@
 #include "gstvaapicompat.h"
 #include "gstvaapiutils.h"
 #include "gstvaapiutils_core.h"
-#include "gstvaapidisplay_priv.h"
 
 #define DEBUG 1
 #include "gstvaapidebug.h"

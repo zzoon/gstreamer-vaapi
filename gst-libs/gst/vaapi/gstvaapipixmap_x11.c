@@ -30,7 +30,6 @@
 #include "gstvaapipixmap_x11.h"
 #include "gstvaapipixmap_priv.h"
 #include "gstvaapidisplay_x11.h"
-#include "gstvaapidisplay_x11_priv.h"
 #include "gstvaapiutils.h"
 #include "gstvaapiutils_x11.h"
 #include "gstvaapisurface_priv.h"
@@ -182,7 +181,7 @@ GST_VAAPI_OBJECT_DEFINE_CLASS_WITH_CODE (GstVaapiPixmapX11,
   GST_DEBUG ("new pixmap, format %s, size %ux%u",
       gst_vaapi_video_format_to_string (format), width, height);
 
-  g_return_val_if_fail (GST_VAAPI_IS_DISPLAY_X11 (display), NULL);
+  g_return_val_if_fail (GST_IS_VAAPI_DISPLAY_X11 (display), NULL);
 
   return
       gst_vaapi_pixmap_new (GST_VAAPI_PIXMAP_CLASS (gst_vaapi_pixmap_x11_class
@@ -206,7 +205,7 @@ gst_vaapi_pixmap_x11_new_with_xid (GstVaapiDisplay * display, Pixmap xid)
 {
   GST_DEBUG ("new pixmap from xid 0x%08x", (guint) xid);
 
-  g_return_val_if_fail (GST_VAAPI_IS_DISPLAY_X11 (display), NULL);
+  g_return_val_if_fail (GST_IS_VAAPI_DISPLAY_X11 (display), NULL);
   g_return_val_if_fail (xid != None, NULL);
 
   return

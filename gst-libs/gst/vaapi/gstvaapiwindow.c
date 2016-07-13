@@ -30,7 +30,6 @@
 #include "sysdeps.h"
 #include "gstvaapiwindow.h"
 #include "gstvaapiwindow_priv.h"
-#include "gstvaapidisplay_priv.h"
 #include "gstvaapisurface_priv.h"
 
 #define DEBUG 1

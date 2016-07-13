@@ -51,24 +51,24 @@ static const VideoOutputInfo g_video_outputs[] = {
   /* Video outputs are sorted in test order for automatic characterisation */
 #if USE_WAYLAND
   {"wayland",
-        gst_vaapi_display_wayland_new,
+        (CreateDisplayFunc) gst_vaapi_display_wayland_new,
       gst_vaapi_window_wayland_new},
 #endif
 #if USE_X11
   {"x11",
-        gst_vaapi_display_x11_new,
+        (CreateDisplayFunc) gst_vaapi_display_x11_new,
         gst_vaapi_window_x11_new,
       gst_vaapi_pixmap_x11_new},
 #endif
 #if USE_GLX
   {"glx",
-        gst_vaapi_display_glx_new,
+        (CreateDisplayFunc) gst_vaapi_display_glx_new,
         gst_vaapi_window_glx_new,
       gst_vaapi_pixmap_x11_new},
 #endif
 #if USE_DRM
   {"drm",
-        gst_vaapi_display_drm_new,
+        (CreateDisplayFunc) gst_vaapi_display_drm_new,
       gst_vaapi_window_drm_new},
 #endif
   {NULL,}
@@ -178,7 +178,7 @@ video_output_create_display (const gchar * display_name)
       o = video_output_lookup (g_output_name);
     else {
       for (o = g_video_outputs; o->name != NULL; o++) {
-        display = o->create_display (display_name);
+        display = (GstVaapiDisplay *) o->create_display (display_name);
         if (display) {
           if (gst_vaapi_display_get_display (display))
             break;

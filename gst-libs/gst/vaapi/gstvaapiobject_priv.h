@@ -27,7 +27,7 @@
 
 #include <gst/vaapi/gstvaapiobject.h>
 #include "gstvaapiminiobject.h"
-#include "gstvaapidisplay_priv.h"
+#include "gstvaapidisplay.h"
 
 G_BEGIN_DECLS
 

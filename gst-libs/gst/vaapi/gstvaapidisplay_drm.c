@@ -33,7 +33,6 @@
 #include <xf86drm.h>
 #include <va/va_drm.h>
 #include "gstvaapiutils.h"
-#include "gstvaapidisplay_priv.h"
 #include "gstvaapidisplay_drm.h"
 #include "gstvaapidisplay_drm_priv.h"
 #include "gstvaapiwindow_drm.h"
