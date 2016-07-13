@@ -24,6 +24,7 @@
 #include <glib.h>
 #include <string.h>
 #include "gstvaapidisplaycache.h"
+#include "gstvaapiminiobject.h"
 
 #define DEBUG 1
 #include "gstvaapidebug.h"
@@ -409,4 +410,25 @@ gst_vaapi_display_cache_lookup_by_name (GstVaapiDisplayCache * cache,
 
   return cache_lookup (cache, compare_display_name, display_name,
       display_types);
+}
+
+GstVaapiDisplayCache *
+gst_vaapi_display_cache_ref (GstVaapiDisplayCache * cache)
+{
+  return ((GstVaapiDisplayCache *)
+      gst_vaapi_mini_object_ref (GST_VAAPI_MINI_OBJECT (cache)));
+}
+
+void
+gst_vaapi_display_cache_unref (GstVaapiDisplayCache * cache)
+{
+  gst_vaapi_mini_object_unref (GST_VAAPI_MINI_OBJECT (cache));
+}
+
+void
+gst_vaapi_display_cache_replace (GstVaapiDisplayCache ** old_cache_ptr,
+    GstVaapiDisplayCache * new_cache)
+{
+  gst_vaapi_mini_object_replace ((GstVaapiMiniObject **) (old_cache_ptr),
+      GST_VAAPI_MINI_OBJECT (new_cache));
 }
