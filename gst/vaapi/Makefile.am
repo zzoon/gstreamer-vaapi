@@ -7,33 +7,7 @@ libgstvaapi_CFLAGS = \
 	-I$(top_builddir)/gst-libs	\
 	$(NULL)
 
-libgstvaapi_LIBS = $(top_builddir)/gst-libs/gst/vaapi/libgstvaapi.la
-
-if USE_DRM
-libgstvaapi_LIBS +=$(top_builddir)/gst-libs/gst/vaapi/libgstvaapi-drm.la
-endif
-
-if USE_X11
-libgstvaapi_LIBS += \
-	$(X11_LIBS) \
-	$(top_builddir)/gst-libs/gst/vaapi/libgstvaapi-x11.la
-endif
-
-if USE_GLX
-libgstvaapi_LIBS += $(top_builddir)/gst-libs/gst/vaapi/libgstvaapi-glx.la
-endif
-
-if USE_EGL
-libgstvaapi_LIBS += $(top_builddir)/gst-libs/gst/vaapi/libgstvaapi-egl.la
-endif
-
-if USE_WAYLAND
-libgstvaapi_CFLAGS += \
-	$(WAYLAND_CFLAGS)	\
-	$(NULL)
-
-libgstvaapi_LIBS += $(top_builddir)/gst-libs/gst/vaapi/libgstvaapi-wayland.la
-endif
+libgstvaapi_LIBS = $(top_builddir)/gst-libs/gst/vaapi/libgstvaapi-public.la
 
 if USE_GST_GL_HELPERS
 libgstvaapi_CFLAGS	+= $(GST_GL_CFLAGS)
@@ -49,7 +23,6 @@ libgstvaapi_source_c = \
 	gstvaapipostprocutil.c	\
 	gstvaapisink.c		\
 	gstvaapivideobuffer.c	\
-	gstvaapivideocontext.c	\
 	gstvaapivideometa.c	\
 	gstvaapidecodebin.c	\
 	gstvaapivideobufferpool.c \
@@ -66,7 +39,6 @@ libgstvaapi_source_h = \
 	gstvaapipostprocutil.h	\
 	gstvaapisink.h		\
 	gstvaapivideobuffer.h	\
-	gstvaapivideocontext.h	\
 	gstvaapivideometa.h	\
 	gstvaapidecodebin.h	\
 	gstvaapivideobufferpool.h \

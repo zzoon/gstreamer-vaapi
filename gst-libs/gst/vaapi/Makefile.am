@@ -1,4 +1,4 @@
-noinst_LTLIBRARIES = libgstvaapi.la
+noinst_LTLIBRARIES = libgstvaapi-internal.la
 
 if USE_DRM
 noinst_LTLIBRARIES += libgstvaapi-drm.la
@@ -20,7 +20,7 @@ if USE_WAYLAND
 noinst_LTLIBRARIES += libgstvaapi-wayland.la
 endif
 
-libgstvaapi_cflags =				\
+libgstvaapi_internal_cflags =			\
 	-DIN_LIBGSTVAAPI			\
 	-DIN_LIBGSTVAAPI_CORE			\
 	-DGST_USE_UNSTABLE_API			\
@@ -34,7 +34,7 @@ libgstvaapi_cflags =				\
 	$(LIBVA_CFLAGS)				\
 	$(NULL)
 
-libgstvaapi_libs =				\
+libgstvaapi_internal_libs =			\
 	$(GST_BASE_LIBS)			\
 	$(GST_BASEVIDEO_LIBS)			\
 	$(GST_LIBS)				\
@@ -44,7 +44,7 @@ libgstvaapi_libs =				\
 	$(top_builddir)/gst-libs/gst/base/libgstvaapi-baseutils.la \
 	$(NULL)
 
-libgstvaapi_source_c =				\
+libgstvaapi_internal_source_c =		\
 	gstvaapibufferproxy.c			\
 	gstvaapicodec_objects.c			\
 	gstvaapicontext.c			\
@@ -57,7 +57,6 @@ libgstvaapi_source_c =				\
 	gstvaapidecoder_objects.c		\
 	gstvaapidecoder_unit.c			\
 	gstvaapidecoder_vc1.c			\
-	gstvaapidisplay.c			\
 	gstvaapidisplaycache.c			\
 	gstvaapifilter.c			\
 	gstvaapiimage.c				\
@@ -84,7 +83,7 @@ libgstvaapi_source_c =				\
 	video-format.c				\
 	$(NULL)
 
-libgstvaapi_source_h =				\
+libgstvaapi_internal_source_h =		\
 	gstvaapibufferproxy.h			\
 	gstvaapidecoder.h			\
 	gstvaapidecoder_h264.h			\
@@ -92,7 +91,6 @@ libgstvaapi_source_h =				\
 	gstvaapidecoder_mpeg2.h			\
 	gstvaapidecoder_mpeg4.h			\
 	gstvaapidecoder_vc1.h			\
-	gstvaapidisplay.h			\
 	gstvaapifilter.h			\
 	gstvaapiimage.h				\
 	gstvaapiimagepool.h			\
@@ -115,7 +113,7 @@ libgstvaapi_source_h =				\
 	video-format.h				\
 	$(NULL)
 
-libgstvaapi_source_priv_h =			\
+libgstvaapi_internal_source_priv_h =	\
 	gstvaapibufferproxy_priv.h		\
 	gstvaapicodec_objects.h			\
 	gstvaapicompat.h			\
@@ -152,29 +150,29 @@ libgstvaapi_source_priv_h =			\
 libgstvaapi_jpegdec_source_c = gstvaapidecoder_jpeg.c
 libgstvaapi_jpegdec_source_h = gstvaapidecoder_jpeg.h
 if USE_JPEG_DECODER
-libgstvaapi_source_c += $(libgstvaapi_jpegdec_source_c)
-libgstvaapi_source_h += $(libgstvaapi_jpegdec_source_h)
+libgstvaapi_internal_source_c += $(libgstvaapi_jpegdec_source_c)
+libgstvaapi_internal_source_h += $(libgstvaapi_jpegdec_source_h)
 endif
 
 libgstvaapi_vp8dec_source_c = gstvaapidecoder_vp8.c
 libgstvaapi_vp8dec_source_h = gstvaapidecoder_vp8.h
 if USE_VP8_DECODER
-libgstvaapi_source_c += $(libgstvaapi_vp8dec_source_c)
-libgstvaapi_source_h += $(libgstvaapi_vp8dec_source_h)
+libgstvaapi_internal_source_c += $(libgstvaapi_vp8dec_source_c)
+libgstvaapi_internal_source_h += $(libgstvaapi_vp8dec_source_h)
 endif
 
 libgstvaapi_hevcdec_source_c = gstvaapidecoder_h265.c
 libgstvaapi_hevcdec_source_h = gstvaapidecoder_h265.h
 if USE_HEVC_DECODER
-libgstvaapi_source_c += $(libgstvaapi_hevcdec_source_c)
-libgstvaapi_source_h += $(libgstvaapi_hevcdec_source_h)
+libgstvaapi_internal_source_c += $(libgstvaapi_hevcdec_source_c)
+libgstvaapi_internal_source_h += $(libgstvaapi_hevcdec_source_h)
 endif
 
 libgstvaapi_vp9dec_source_c = gstvaapidecoder_vp9.c
 libgstvaapi_vp9dec_source_h = gstvaapidecoder_vp9.h
 if USE_VP9_DECODER
-libgstvaapi_source_c += $(libgstvaapi_vp9dec_source_c)
-libgstvaapi_source_h += $(libgstvaapi_vp9dec_source_h)
+libgstvaapi_internal_source_c += $(libgstvaapi_vp9dec_source_c)
+libgstvaapi_internal_source_h += $(libgstvaapi_vp9dec_source_h)
 endif
 
 libgstvaapi_enc_source_c =			\
@@ -205,37 +203,37 @@ libgstvaapi_enc_source_priv_h =			\
 	$(NULL)
 
 if USE_ENCODERS
-libgstvaapi_source_c += $(libgstvaapi_enc_source_c)
-libgstvaapi_source_h += $(libgstvaapi_enc_source_h)
-libgstvaapi_source_priv_h += $(libgstvaapi_enc_source_priv_h)
+libgstvaapi_internal_source_c += $(libgstvaapi_enc_source_c)
+libgstvaapi_internal_source_h += $(libgstvaapi_enc_source_h)
+libgstvaapi_internal_source_priv_h += $(libgstvaapi_enc_source_priv_h)
 endif
 
 libgstvaapi_jpegenc_source_c = gstvaapiencoder_jpeg.c
 libgstvaapi_jpegenc_source_h = gstvaapiencoder_jpeg.h
 if USE_JPEG_ENCODER
-libgstvaapi_source_c += $(libgstvaapi_jpegenc_source_c)
-libgstvaapi_source_h += $(libgstvaapi_jpegenc_source_h)
+libgstvaapi_internal_source_c += $(libgstvaapi_jpegenc_source_c)
+libgstvaapi_internal_source_h += $(libgstvaapi_jpegenc_source_h)
 endif
 
 libgstvaapi_vp8enc_source_c = gstvaapiencoder_vp8.c
 libgstvaapi_vp8enc_source_h = gstvaapiencoder_vp8.h
 if USE_VP8_ENCODER
-libgstvaapi_source_c += $(libgstvaapi_vp8enc_source_c)
-libgstvaapi_source_h += $(libgstvaapi_vp8enc_source_h)
+libgstvaapi_internal_source_c += $(libgstvaapi_vp8enc_source_c)
+libgstvaapi_internal_source_h += $(libgstvaapi_vp8enc_source_h)
 endif
 
 libgstvaapi_h265enc_source_c = gstvaapiencoder_h265.c
 libgstvaapi_h265enc_source_h = gstvaapiencoder_h265.h
 if USE_H265_ENCODER
-libgstvaapi_source_c += $(libgstvaapi_h265enc_source_c)
-libgstvaapi_source_h += $(libgstvaapi_h265enc_source_h)
+libgstvaapi_internal_source_c += $(libgstvaapi_h265enc_source_c)
+libgstvaapi_internal_source_h += $(libgstvaapi_h265enc_source_h)
 endif
 
 libgstvaapi_vp9enc_source_c = gstvaapiencoder_vp9.c
 libgstvaapi_vp9enc_source_h = gstvaapiencoder_vp9.h
 if USE_VP9_ENCODER
-libgstvaapi_source_c += $(libgstvaapi_vp9enc_source_c)
-libgstvaapi_source_h += $(libgstvaapi_vp9enc_source_h)
+libgstvaapi_internal_source_c += $(libgstvaapi_vp9enc_source_c)
+libgstvaapi_internal_source_h += $(libgstvaapi_vp9enc_source_h)
 endif
 
 libgstvaapi_drm_source_c =			\
@@ -332,21 +330,21 @@ libgstvaapi_wayland_source_priv_h =		\
 	gstvaapidisplay_wayland_priv.h		\
 	$(NULL)
 
-libgstvaapi_la_SOURCES =			\
-	$(libgstvaapi_source_c)			\
-	$(libgstvaapi_source_priv_h)		\
-	$(libgstvaapi_source_h)			\
+libgstvaapi_internal_la_SOURCES =				\
+	$(libgstvaapi_internal_source_c)			\
+	$(libgstvaapi_internal_source_priv_h)		\
+	$(libgstvaapi_internal_source_h)			\
 	$(NULL)
 
-libgstvaapi_la_CFLAGS =				\
-	$(libgstvaapi_cflags)			\
+libgstvaapi_internal_la_CFLAGS =			\
+	$(libgstvaapi_internal_cflags)			\
 	$(NULL)
 
-libgstvaapi_la_LIBADD =				\
-	$(libgstvaapi_libs)			\
+libgstvaapi_internal_la_LIBADD =			\
+	$(libgstvaapi_internal_libs)			\
 	$(NULL)
 
-libgstvaapi_la_LDFLAGS =			\
+libgstvaapi_internal_la_LDFLAGS =			\
 	$(GST_ALL_LDFLAGS)			\
 	$(NULL)
 
@@ -503,6 +501,68 @@ libgstvaapi_wayland_la_LIBADD = 		\
 
 libgstvaapi_wayland_la_LDFLAGS = 		\
 	$(GST_ALL_LDFLAGS)			\
+	$(NULL)
+
+lib_LTLIBRARIES = libgstvaapi-public.la
+
+libgstvaapi_public_cflags = \
+	-DGST_USE_UNSTABLE_API			\
+	-I$(top_srcdir)/gst-libs		\
+	-I$(top_builddir)/gst-libs		\
+	$(GST_BASE_CFLAGS)			\
+	$(GST_VIDEO_CFLAGS)			\
+	$(NULL)
+
+libgstvaapi_public_libs =	\
+	libgstvaapi-internal.la	\
+	$(NULL)
+
+if USE_DRM
+libgstvaapi_public_libs += libgstvaapi-drm.la
+endif
+
+if USE_X11
+libgstvaapi_public_libs += libgstvaapi-x11.la
+endif
+
+if USE_GLX
+libgstvaapi_public_libs += libgstvaapi-glx.la
+endif
+
+if USE_EGL
+libgstvaapi_public_libs += libgstvaapi-egl.la
+endif
+
+#if USE_WAYLAND
+libgstvaapi_public_libs += libgstvaapi-wayland.la
+#endif
+
+
+libgstvaapi_public_source_c =	\
+    gstvaapidisplay.c 			\
+    gstvaapivideocontext.c 		\
+	$(NULL)
+
+libgstvaapi_public_source_h =	\
+    gstvaapidisplay.h 			\
+    gstvaapivideocontext.h 		\
+	$(NULL)
+
+libgstvaapi_public_la_SOURCES =			\
+	$(libgstvaapi_public_source_c)		\
+	$(libgstvaapi_public_source_h)		\
+	$(NULL)
+
+libgstvaapi_public_la_CFLAGS =			\
+	$(libgstvaapi_public_cflags)		\
+	$(NULL)
+
+libgstvaapi_public_la_LIBADD =			\
+	$(libgstvaapi_public_libs)			\
+	$(NULL)
+
+libgstvaapi_public_la_LDFLAGS =		\
+	$(GST_ALL_LDFLAGS)				\
 	$(NULL)
 
 VERSION_FILE		= .VERSION

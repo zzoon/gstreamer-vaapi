@@ -23,7 +23,7 @@
  */
 
 #include "gstcompat.h"
-#include "gstvaapivideocontext.h"
+#include <gst/vaapi/gstvaapivideocontext.h>
 #if USE_DRM
 # include <gst/vaapi/gstvaapidisplay_drm.h>
 #endif

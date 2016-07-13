@@ -69,7 +69,7 @@ extra_files =
 # CFLAGS and LDFLAGS for compiling scan program. Only needed if your app/lib
 # contains GtkObjects/GObjects and you want to document signals and properties.
 GTKDOC_CFLAGS = -DGST_USE_UNSTABLE_API $(GST_PLUGINS_BAD_CFLAGS) $(GST_BASE_CFLAGS) -I$(top_builddir) -I$(top_builddir)/gst-libs/
-GTKDOC_LIBS = $(top_builddir)/gst-libs/gst/vaapi/libgstvaapi.la $(top_builddir)/gst/vaapi/libgstvaapi.la $(GST_BASE_LIBS)
+GTKDOC_LIBS = $(top_builddir)/gst-libs/gst/vaapi/libgstvaapi-public.la $(top_builddir)/gst/vaapi/libgstvaapi.la $(GST_BASE_LIBS)
 
 # If you need to override some of the declarations, place them in this file
 # and uncomment this line.

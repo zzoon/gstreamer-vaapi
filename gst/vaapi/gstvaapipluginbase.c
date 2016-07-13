@@ -25,9 +25,9 @@
 #include "gstcompat.h"
 #include <gst/vaapi/gstvaapisurface_drm.h>
 #include <gst/base/gstpushsrc.h>
+#include <gst/vaapi/gstvaapivideocontext.h>
 #include "gstvaapipluginbase.h"
 #include "gstvaapipluginutil.h"
-#include "gstvaapivideocontext.h"
 #include "gstvaapivideometa.h"
 #include "gstvaapivideobufferpool.h"
 

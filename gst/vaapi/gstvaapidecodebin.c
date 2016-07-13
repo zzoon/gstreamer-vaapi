@@ -46,9 +46,9 @@
 #include <string.h>
 #include <gst/gst.h>
 #include <gst/pbutils/pbutils.h>
+#include <gst/vaapi/gstvaapivideocontext.h>
 #include "gstvaapipluginutil.h"
 #include "gstvaapidecodebin.h"
-#include "gstvaapivideocontext.h"
 #include "gstvaapipluginbase.h"
 
 #define GST_PLUGIN_NAME "vaapidecodebin"
