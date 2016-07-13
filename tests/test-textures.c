@@ -66,7 +66,7 @@ main (int argc, char *argv[])
 
   gst_init (&argc, &argv);
 
-  display = gst_vaapi_display_glx_new (NULL);
+  display = (GstVaapiDisplay *) gst_vaapi_display_glx_new (NULL);
   if (!display)
     g_error ("could not create VA display");
 

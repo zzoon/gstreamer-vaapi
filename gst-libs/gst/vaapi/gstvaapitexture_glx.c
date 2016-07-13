@@ -35,8 +35,7 @@
 #include "gstvaapiutils.h"
 #include "gstvaapiutils_glx.h"
 #include "gstvaapidisplay_glx.h"
-#include "gstvaapidisplay_x11_priv.h"
-#include "gstvaapidisplay_glx_priv.h"
+#include "gstvaapidisplay_x11.h"
 
 #define DEBUG 1
 #include "gstvaapidebug.h"
@@ -228,7 +227,7 @@ GstVaapiTexture *
 gst_vaapi_texture_glx_new (GstVaapiDisplay * display, guint target,
     guint format, guint width, guint height)
 {
-  g_return_val_if_fail (GST_VAAPI_IS_DISPLAY_GLX (display), NULL);
+  g_return_val_if_fail (GST_IS_VAAPI_DISPLAY_GLX (display), NULL);
 
   return gst_vaapi_texture_new_internal (GST_VAAPI_TEXTURE_CLASS
       (gst_vaapi_texture_glx_class ()), display, GST_VAAPI_ID_INVALID, target,
@@ -278,7 +277,7 @@ gst_vaapi_texture_glx_new_wrapped (GstVaapiDisplay * display,
   gboolean success;
   GstVaapiGLApi gl_api;
 
-  g_return_val_if_fail (GST_VAAPI_IS_DISPLAY_GLX (display), NULL);
+  g_return_val_if_fail (GST_IS_VAAPI_DISPLAY_GLX (display), NULL);
   g_return_val_if_fail (texture_id != GL_NONE, NULL);
   g_return_val_if_fail (target == GL_TEXTURE_2D, NULL);
   g_return_val_if_fail (format == GL_RGBA || format == GL_BGRA, NULL);

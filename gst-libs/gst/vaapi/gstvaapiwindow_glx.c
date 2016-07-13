@@ -31,8 +31,8 @@
 #include "gstvaapiwindow_glx.h"
 #include "gstvaapiwindow_x11_priv.h"
 #include "gstvaapidisplay_x11.h"
-#include "gstvaapidisplay_x11_priv.h"
-#include "gstvaapidisplay_glx_priv.h"
+#include "gstvaapidisplay_x11.h"
+#include "gstvaapidisplay_glx.h"
 #include "gstvaapiutils_x11.h"
 #include "gstvaapiutils_glx.h"
 
@@ -344,7 +344,7 @@ gst_vaapi_window_glx_new (GstVaapiDisplay * display, guint width, guint height)
 {
   GstVaapiWindow *window;
 
-  g_return_val_if_fail (GST_VAAPI_IS_DISPLAY_GLX (display), NULL);
+  g_return_val_if_fail (GST_IS_VAAPI_DISPLAY_GLX (display), NULL);
 
   window =
       gst_vaapi_window_new_internal (GST_VAAPI_WINDOW_CLASS
@@ -381,7 +381,7 @@ gst_vaapi_window_glx_new_with_xid (GstVaapiDisplay * display, Window xid)
 
   GST_DEBUG ("new window from xid 0x%08x", (guint) xid);
 
-  g_return_val_if_fail (GST_VAAPI_IS_DISPLAY_GLX (display), NULL);
+  g_return_val_if_fail (GST_IS_VAAPI_DISPLAY_GLX (display), NULL);
   g_return_val_if_fail (xid != None, NULL);
 
   window =

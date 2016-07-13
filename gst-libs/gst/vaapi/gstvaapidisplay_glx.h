@@ -29,15 +29,45 @@
 
 G_BEGIN_DECLS
 
-#define GST_VAAPI_DISPLAY_GLX(obj) \
-    ((GstVaapiDisplayGLX *)(obj))
-
 typedef struct _GstVaapiDisplayGLX              GstVaapiDisplayGLX;
+typedef struct _GstVaapiDisplayGLXClass         GstVaapiDisplayGLXClass;
 
-GstVaapiDisplay *
+GType gst_vaapi_display_glx_get_type (void);
+
+#define GST_TYPE_VAAPI_DISPLAY_GLX                (gst_vaapi_display_glx_get_type ())
+#define GST_VAAPI_DISPLAY_GLX(obj)                (G_TYPE_CHECK_INSTANCE_CAST ((obj), GST_TYPE_VAAPI_DISPLAY_GLX, GstVaapiDisplayGLX))
+#define GST_VAAPI_DISPLAY_GLX_CLASS(klass)        (G_TYPE_CHECK_CLASS_CAST ((klass), GST_TYPE_VAAPI_DISPLAY_GLX, GstVaapiDisplayGLXClass))
+#define GST_IS_VAAPI_DISPLAY_GLX(obj)             (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GST_TYPE_VAAPI_DISPLAY_GLX))
+#define GST_IS_VAAPI_DISPLAY_GLX_CLASS(klass)     (G_TYPE_CHECK_CLASS_TYPE ((klass), GST_TYPE_VAAPI_DISPLAY_GLX))
+#define GST_VAAPI_DISPLAY_GLX_CAST(obj)           ((GstVaapiDisplayGLX*)(obj))
+#define GST_VAAPI_DISPLAY_GLX_GET_CLASS(obj)      (G_TYPE_INSTANCE_GET_CLASS ((obj), GST_TYPE_VAAPI_DISPLAY_GLX, GstVaapiDisplayGLXClass))
+
+/**
+ * GstVaapiDisplayGLX:
+ *
+ * VA/GLX display wrapper.
+ */
+struct _GstVaapiDisplayGLX
+{
+  /*< private >*/
+  GstVaapiDisplayX11 parent_instance;
+};
+
+/**
+ * GstVaapiDisplayGLXClass:
+ *
+ * VA/GLX display wrapper clas.
+ */
+struct _GstVaapiDisplayGLXClass
+{
+  /*< private >*/
+  GstVaapiDisplayX11Class parent_class;
+};
+
+GstVaapiDisplayGLX *
 gst_vaapi_display_glx_new (const gchar * display_name);
 
-GstVaapiDisplay *
+GstVaapiDisplayGLX *
 gst_vaapi_display_glx_new_with_display (Display * x11_display);
 
 G_END_DECLS
