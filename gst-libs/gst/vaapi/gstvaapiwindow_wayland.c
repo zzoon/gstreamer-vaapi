@@ -32,7 +32,6 @@
 #include "gstvaapiwindow_wayland.h"
 #include "gstvaapiwindow_priv.h"
 #include "gstvaapidisplay_wayland.h"
-#include "gstvaapidisplay_wayland_priv.h"
 #include "gstvaapiutils.h"
 #include "gstvaapifilter.h"
 #include "gstvaapisurfacepool.h"
@@ -256,30 +255,33 @@ gst_vaapi_window_wayland_create (GstVaapiWindow * window,
 {
   GstVaapiWindowWaylandPrivate *const priv =
       GST_VAAPI_WINDOW_WAYLAND_GET_PRIVATE (window);
-  GstVaapiDisplayWaylandPrivate *const priv_display =
-      GST_VAAPI_DISPLAY_WAYLAND_GET_PRIVATE (GST_VAAPI_OBJECT_DISPLAY (window));
+  GstVaapiDisplayWayland *display =
+      (GstVaapiDisplayWayland *) GST_VAAPI_OBJECT_DISPLAY (window);
+  struct wl_shell *shell = gst_vaapi_display_wayland_get_shell (display);
+  struct wl_compositor *compositor =
+      gst_vaapi_display_wayland_get_compositor (display);
+
+  g_return_val_if_fail (compositor != NULL, FALSE);
+  g_return_val_if_fail (shell != NULL, FALSE);
 
   GST_DEBUG ("create window, size %ux%u", *width, *height);
 
-  g_return_val_if_fail (priv_display->compositor != NULL, FALSE);
-  g_return_val_if_fail (priv_display->shell != NULL, FALSE);
-
   GST_VAAPI_OBJECT_LOCK_DISPLAY (window);
-  priv->event_queue = wl_display_create_queue (priv_display->wl_display);
+  priv->event_queue =
+      wl_display_create_queue (GST_VAAPI_DISPLAY_WL_DISPLAY (display));
   GST_VAAPI_OBJECT_UNLOCK_DISPLAY (window);
   if (!priv->event_queue)
     return FALSE;
 
   GST_VAAPI_OBJECT_LOCK_DISPLAY (window);
-  priv->surface = wl_compositor_create_surface (priv_display->compositor);
+  priv->surface = wl_compositor_create_surface (compositor);
   GST_VAAPI_OBJECT_UNLOCK_DISPLAY (window);
   if (!priv->surface)
     return FALSE;
   wl_proxy_set_queue ((struct wl_proxy *) priv->surface, priv->event_queue);
 
   GST_VAAPI_OBJECT_LOCK_DISPLAY (window);
-  priv->shell_surface =
-      wl_shell_get_shell_surface (priv_display->shell, priv->surface);
+  priv->shell_surface = wl_shell_get_shell_surface (shell, priv->surface);
   GST_VAAPI_OBJECT_UNLOCK_DISPLAY (window);
   if (!priv->shell_surface)
     return FALSE;
@@ -344,8 +346,12 @@ gst_vaapi_window_wayland_resize (GstVaapiWindow * window,
 {
   GstVaapiWindowWaylandPrivate *const priv =
       GST_VAAPI_WINDOW_WAYLAND_GET_PRIVATE (window);
-  GstVaapiDisplayWaylandPrivate *const priv_display =
-      GST_VAAPI_DISPLAY_WAYLAND_GET_PRIVATE (GST_VAAPI_OBJECT_DISPLAY (window));
+  GstVaapiDisplayWayland *display =
+      (GstVaapiDisplayWayland *) GST_VAAPI_OBJECT_DISPLAY (window);
+  struct wl_compositor *compositor =
+      gst_vaapi_display_wayland_get_compositor (display);
+
+  g_return_val_if_fail (compositor != NULL, FALSE);
 
   GST_DEBUG ("resize window, new size %ux%u", width, height);
 
@@ -353,7 +359,7 @@ gst_vaapi_window_wayland_resize (GstVaapiWindow * window,
   if (priv->opaque_region)
     wl_region_destroy (priv->opaque_region);
   GST_VAAPI_OBJECT_LOCK_DISPLAY (window);
-  priv->opaque_region = wl_compositor_create_region (priv_display->compositor);
+  priv->opaque_region = wl_compositor_create_region (compositor);
   GST_VAAPI_OBJECT_UNLOCK_DISPLAY (window);
   wl_region_add (priv->opaque_region, 0, 0, width, height);
 
@@ -619,7 +625,7 @@ gst_vaapi_window_wayland_new (GstVaapiDisplay * display,
 {
   GST_DEBUG ("new window, size %ux%u", width, height);
 
-  g_return_val_if_fail (GST_VAAPI_IS_DISPLAY_WAYLAND (display), NULL);
+  g_return_val_if_fail (GST_IS_VAAPI_DISPLAY_WAYLAND (display), NULL);
 
   return gst_vaapi_window_new_internal (GST_VAAPI_WINDOW_CLASS
       (gst_vaapi_window_wayland_class ()), display, GST_VAAPI_ID_INVALID, width,

@@ -29,19 +29,69 @@
 
 G_BEGIN_DECLS
 
-#define GST_VAAPI_DISPLAY_WAYLAND(obj) \
-    ((GstVaapiDisplayWayland *)(obj))
-
 typedef struct _GstVaapiDisplayWayland          GstVaapiDisplayWayland;
+typedef struct _GstVaapiDisplayWaylandClass     GstVaapiDisplayWaylandClass;
+typedef struct _GstVaapiDisplayWaylandPrivate   GstVaapiDisplayWaylandPrivate;
 
-GstVaapiDisplay *
+GType gst_vaapi_display_wayland_get_type (void);
+
+#define GST_TYPE_VAAPI_DISPLAY_WAYLAND            (gst_vaapi_display_wayland_get_type ())
+#define GST_VAAPI_DISPLAY_WAYLAND(obj)                (G_TYPE_CHECK_INSTANCE_CAST ((obj), GST_TYPE_VAAPI_DISPLAY_WAYLAND, GstVaapiDisplayWayland))
+#define GST_VAAPI_DISPLAY_WAYLAND_CLASS(klass)        (G_TYPE_CHECK_CLASS_CAST ((klass), GST_TYPE_VAAPI_DISPLAY_WAYLAND, GstVaapiDisplayWaylandClass))
+#define GST_IS_VAAPI_DISPLAY_WAYLAND(obj)             (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GST_TYPE_VAAPI_DISPLAY_WAYLAND))
+#define GST_IS_VAAPI_DISPLAY_WAYLAND_CLASS(klass)     (G_TYPE_CHECK_CLASS_TYPE ((klass), GST_TYPE_VAAPI_DISPLAY_WAYLAND))
+#define GST_VAAPI_DISPLAY_WAYLAND_CAST(obj)           ((GstVaapiDisplayWayland*)(obj))
+#define GST_VAAPI_DISPLAY_WAYLAND_GET_CLASS(obj)      (G_TYPE_INSTANCE_GET_CLASS ((obj), GST_TYPE_VAAPI_DISPLAY_WAYLAND, GstVaapiDisplayWaylandClass))
+
+/**
+ * GstVaapiDisplayWayland:
+ *
+ * VA/Wayland display wrapper.
+ */
+struct _GstVaapiDisplayWayland
+{
+  /*< private >*/
+  GstVaapiDisplay parent_instance;
+
+  GstVaapiDisplayWaylandPrivate *priv;
+};
+
+/**
+ * GstVaapiDisplayWaylandClass:
+ *
+ * VA/Wayland display wrapper clas.
+ */
+struct _GstVaapiDisplayWaylandClass
+{
+  /*< private >*/
+  GstVaapiDisplayClass parent_class;
+};
+
+/**
+ * GST_VAAPI_DISPLAY_WL_DISPLAY:
+ * @display: a #GstVaapiDisplay
+ *
+ * Macro that evaluates to the underlying Wayland #wl_display object
+ * of @display
+ */
+#undef  GST_VAAPI_DISPLAY_WL_DISPLAY
+#define GST_VAAPI_DISPLAY_WL_DISPLAY(display) \
+    gst_vaapi_display_wayland_get_display (display)
+
+GstVaapiDisplayWayland *
 gst_vaapi_display_wayland_new (const gchar * display_name);
 
-GstVaapiDisplay *
+GstVaapiDisplayWayland *
 gst_vaapi_display_wayland_new_with_display (struct wl_display * wl_display);
 
 struct wl_display *
 gst_vaapi_display_wayland_get_display (GstVaapiDisplayWayland * display);
+
+struct wl_compositor *
+gst_vaapi_display_wayland_get_compositor (GstVaapiDisplayWayland * display);
+
+struct wl_shell *
+gst_vaapi_display_wayland_get_shell (GstVaapiDisplayWayland * display);
 
 G_END_DECLS
 

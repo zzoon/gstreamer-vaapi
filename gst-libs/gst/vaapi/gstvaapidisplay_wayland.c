@@ -28,13 +28,34 @@
 
 #include "sysdeps.h"
 #include <string.h>
-#include "gstvaapidisplay_priv.h"
 #include "gstvaapidisplay_wayland.h"
-#include "gstvaapidisplay_wayland_priv.h"
 #include "gstvaapiwindow_wayland.h"
+#include "gstvaapidisplaycache.h"
 
 #define DEBUG 1
 #include "gstvaapidebug.h"
+
+G_DEFINE_TYPE (GstVaapiDisplayWayland, gst_vaapi_display_wayland,
+    GST_TYPE_VAAPI_DISPLAY);
+
+#define GST_VAAPI_DISPLAY_WAYLAND_GET_PRIVATE(o) \
+    (G_TYPE_INSTANCE_GET_PRIVATE((o), GST_TYPE_VAAPI_DISPLAY_WAYLAND, GstVaapiDisplayWaylandPrivate))
+
+struct _GstVaapiDisplayWaylandPrivate
+{
+  gchar *display_name;
+  struct wl_display *wl_display;
+  struct wl_compositor *compositor;
+  struct wl_shell *shell;
+  struct wl_output *output;
+  struct wl_registry *registry;
+  guint width;
+  guint height;
+  guint phys_width;
+  guint phys_height;
+  gint event_fd;
+  guint use_foreign_display:1;
+};
 
 static const guint g_display_types = 1U << GST_VAAPI_DISPLAY_TYPE_WAYLAND;
 
@@ -336,26 +357,23 @@ gst_vaapi_display_wayland_create_window (GstVaapiDisplay * display,
 }
 
 static void
-gst_vaapi_display_wayland_init (GstVaapiDisplay * display)
+gst_vaapi_display_wayland_init (GstVaapiDisplayWayland * display)
 {
   GstVaapiDisplayWaylandPrivate *const priv =
       GST_VAAPI_DISPLAY_WAYLAND_GET_PRIVATE (display);
 
+  display->priv = priv;
   priv->event_fd = -1;
 }
 
 static void
 gst_vaapi_display_wayland_class_init (GstVaapiDisplayWaylandClass * klass)
 {
-  GstVaapiMiniObjectClass *const object_class =
-      GST_VAAPI_MINI_OBJECT_CLASS (klass);
   GstVaapiDisplayClass *const dpy_class = GST_VAAPI_DISPLAY_CLASS (klass);
 
-  gst_vaapi_display_class_init (&klass->parent_class);
+  g_type_class_add_private (klass, sizeof (GstVaapiDisplayWaylandPrivate));
 
-  object_class->size = sizeof (GstVaapiDisplayWayland);
   dpy_class->display_type = GST_VAAPI_DISPLAY_TYPE_WAYLAND;
-  dpy_class->init = gst_vaapi_display_wayland_init;
   dpy_class->bind_display = gst_vaapi_display_wayland_bind_display;
   dpy_class->open_display = gst_vaapi_display_wayland_open_display;
   dpy_class->close_display = gst_vaapi_display_wayland_close_display;
@@ -363,19 +381,6 @@ gst_vaapi_display_wayland_class_init (GstVaapiDisplayWaylandClass * klass)
   dpy_class->get_size = gst_vaapi_display_wayland_get_size;
   dpy_class->get_size_mm = gst_vaapi_display_wayland_get_size_mm;
   dpy_class->create_window = gst_vaapi_display_wayland_create_window;
-}
-
-static inline const GstVaapiDisplayClass *
-gst_vaapi_display_wayland_class (void)
-{
-  static GstVaapiDisplayWaylandClass g_class;
-  static gsize g_class_init = FALSE;
-
-  if (g_once_init_enter (&g_class_init)) {
-    gst_vaapi_display_wayland_class_init (&g_class);
-    g_once_init_leave (&g_class_init, TRUE);
-  }
-  return GST_VAAPI_DISPLAY_CLASS (&g_class);
 }
 
 /**
@@ -388,10 +393,11 @@ gst_vaapi_display_wayland_class (void)
  *
  * Return value: a newly allocated #GstVaapiDisplay object
  */
-GstVaapiDisplay *
+GstVaapiDisplayWayland *
 gst_vaapi_display_wayland_new (const gchar * display_name)
 {
-  return gst_vaapi_display_new (gst_vaapi_display_wayland_class (),
+  return (GstVaapiDisplayWayland *)
+      gst_vaapi_display_new (GST_TYPE_VAAPI_DISPLAY_WAYLAND,
       GST_VAAPI_DISPLAY_INIT_FROM_DISPLAY_NAME, (gpointer) display_name);
 }
 
@@ -406,12 +412,13 @@ gst_vaapi_display_wayland_new (const gchar * display_name)
  *
  * Return value: a newly allocated #GstVaapiDisplay object
  */
-GstVaapiDisplay *
+GstVaapiDisplayWayland *
 gst_vaapi_display_wayland_new_with_display (struct wl_display * wl_display)
 {
   g_return_val_if_fail (wl_display, NULL);
 
-  return gst_vaapi_display_new (gst_vaapi_display_wayland_class (),
+  return (GstVaapiDisplayWayland *)
+      gst_vaapi_display_new (GST_TYPE_VAAPI_DISPLAY_WAYLAND,
       GST_VAAPI_DISPLAY_INIT_FROM_NATIVE_DISPLAY, wl_display);
 }
 
@@ -428,7 +435,32 @@ gst_vaapi_display_wayland_new_with_display (struct wl_display * wl_display)
 struct wl_display *
 gst_vaapi_display_wayland_get_display (GstVaapiDisplayWayland * display)
 {
-  g_return_val_if_fail (GST_VAAPI_IS_DISPLAY_WAYLAND (display), NULL);
+  GstVaapiDisplayWaylandPrivate *const priv =
+      GST_VAAPI_DISPLAY_WAYLAND_GET_PRIVATE (display);
 
-  return GST_VAAPI_DISPLAY_WL_DISPLAY (display);
+  g_return_val_if_fail (GST_IS_VAAPI_DISPLAY_WAYLAND (display), NULL);
+
+  return priv->wl_display;
+}
+
+struct wl_compositor *
+gst_vaapi_display_wayland_get_compositor (GstVaapiDisplayWayland * display)
+{
+  GstVaapiDisplayWaylandPrivate *const priv =
+      GST_VAAPI_DISPLAY_WAYLAND_GET_PRIVATE (display);
+
+  g_return_val_if_fail (GST_IS_VAAPI_DISPLAY_WAYLAND (display), NULL);
+
+  return priv->compositor;
+}
+
+struct wl_shell *
+gst_vaapi_display_wayland_get_shell (GstVaapiDisplayWayland * display)
+{
+  GstVaapiDisplayWaylandPrivate *const priv =
+      GST_VAAPI_DISPLAY_WAYLAND_GET_PRIVATE (display);
+
+  g_return_val_if_fail (GST_IS_VAAPI_DISPLAY_WAYLAND (display), NULL);
+
+  return priv->shell;
 }
