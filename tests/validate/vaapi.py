@@ -24,8 +24,11 @@ import os
 
 TEST_MANAGER = "validate"
 
-def get_pipeline_description():
-    return ("vaapi_pipeline", "videotestsrc ! vaapih264enc ! vaapih264dec ! vaapisink")
+def get_pipeline_description(idx):
+    if idx is 0:
+      return ("vaapi_pipeline", "videotestsrc ! vaapih264enc ! vaapih264dec ! vaapisink")
+    elif idx is 1:
+      return ("vaapi_encoder", "videotestsrc ! vaapih264enc ! fakesink")
 
 def setup_tests(test_manager, options):
     print("Setting up Gstreamer VA-API default tests")
@@ -36,8 +39,9 @@ def setup_tests(test_manager, options):
     valid_scenarios = ["play_15s"]
     test_manager.add_scenarios(valid_scenarios)
 
-    description = get_pipeline_description()
-    pipelines_descriptions.append(description)
+    for i in range(2):
+        description = get_pipeline_description(i)
+        pipelines_descriptions.append(description)
 
     test_manager.add_generators(test_manager.GstValidatePipelineTestsGenerator
                                 ("vaapi_validate", test_manager,
