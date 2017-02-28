@@ -225,10 +225,10 @@ class GstValidateVaapiDecoderTestsGenerator(GstValidatePipelineTestsGenerator):
                 decoder = "vaapivp8dec"
         elif (codec == "vp9"):
             if container:
-                decoder = "vp9dec"
+                decoder = "vaapivp9dec"
             else:
                 parser = "ivfparse"
-                decoder = "vp9dec"
+                decoder = "vaapivp9dec"
         else:
             self.error ("Error: couldn't recognize codec : %s/%s", codec, container)
 
