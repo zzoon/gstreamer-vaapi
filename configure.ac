@@ -155,6 +155,11 @@ AC_ARG_WITH([glapi],
     [build with the specified OpenGL APIs @<:@default=default_glapi@:>@]),
   [GLAPI="$with_glapi"], [GLAPI=default_glapi])
 
+AC_ARG_ENABLE([gtk3],
+  AC_HELP_STRING([--enable-gtk3],
+    [enable GTK3 @<:@default=yes@:>@]),
+  [], [enable_gtk3="yes"])
+
 dnl *** checks for platform ***
 
 dnl * hardware/architecture *
@@ -475,6 +480,19 @@ if test "x$enable_wayland" = "xyes"; then
       saved_CPPFLAGS="$CPPFLAGS"
       CPPFLAGS="$CPPFLAGS $WAYLAND_CFLAGS"
       AC_CHECK_HEADERS([wayland-client.h], [], [USE_WAYLAND=0])
+      CPPFLAGS="$saved_CPPFLAGS"
+    ], [:])
+fi
+
+dnl Check for GTK3 for tests
+USE_GTK3=0
+if test "x$enable_gtk3" = "xyes"; then
+  PKG_CHECK_MODULES([GTK3], [gtk+-3.0],
+    [
+      USE_GTK3=1
+      saved_CPPFLAGS="$CPPFLAGS"
+      CPPFLAGS="$CPPFLAGS $GTK3_CFLAGS"
+      AC_CHECK_HEADERS([gtk/gtk.h], [], [USE_GTK3=0])
       CPPFLAGS="$saved_CPPFLAGS"
     ], [:])
 fi
@@ -1005,6 +1023,10 @@ AC_DEFINE_UNQUOTED([USE_GLES_VERSION_MASK], [$GLES_VERSION_MASK],
 AC_DEFINE_UNQUOTED([USE_WAYLAND], [$USE_WAYLAND],
   [Defined to 1 if WAYLAND is enabled])
 AM_CONDITIONAL([USE_WAYLAND], [test $USE_WAYLAND -eq 1])
+
+AC_DEFINE_UNQUOTED([USE_GTK3], [$USE_GTK3],
+  [Defined to 1 if GTK3 is enabled])
+AM_CONDITIONAL([USE_GTK3], [test $USE_GTK3 -eq 1])
 
 dnl @TODO hack for egl's dynamic module loading. remove it!
 AC_DEFINE_UNQUOTED([GST_VAAPI_MAJOR_VERSION_S], ["0"],
