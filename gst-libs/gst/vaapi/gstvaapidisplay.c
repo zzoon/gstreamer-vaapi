@@ -900,10 +900,20 @@ gst_vaapi_display_create_unlocked (GstVaapiDisplay * display,
 
   switch (init_type) {
     case GST_VAAPI_DISPLAY_INIT_FROM_VA_DISPLAY:
-      info.va_display = init_value;
-      priv->display = init_value;
+    {
+      GstVaapiDisplayInfo *p_info = init_value;
+      info.va_display = p_info->va_display;
+      info.display_type = p_info->display_type;
+      priv->display = p_info->va_display;
       priv->use_foreign_display = TRUE;
-      break;
+
+      if (!klass->bind_display)
+        break;
+      else if (!klass->bind_display (display, p_info->native_display))
+        return FALSE;
+
+      goto create_display;
+    }
     case GST_VAAPI_DISPLAY_INIT_FROM_DISPLAY_NAME:
       if (klass->open_display && !klass->open_display (display, init_value))
         return FALSE;
@@ -1130,6 +1140,7 @@ gst_vaapi_display_new_with_display (VADisplay va_display)
 {
   GstVaapiDisplayCache *const cache = get_display_cache ();
   const GstVaapiDisplayInfo *info;
+  GstVaapiDisplayInfo new_info;
 
   g_return_val_if_fail (va_display != NULL, NULL);
   g_return_val_if_fail (cache != NULL, NULL);
@@ -1138,8 +1149,11 @@ gst_vaapi_display_new_with_display (VADisplay va_display)
   if (info)
     return gst_vaapi_display_ref_internal (info->display);
 
+  new_info.va_display = va_display;
+  new_info.display_type = GST_VAAPI_DISPLAY_TYPE_ANY;
+
   return gst_vaapi_display_new (g_object_new (GST_TYPE_VAAPI_DISPLAY, NULL),
-      GST_VAAPI_DISPLAY_INIT_FROM_VA_DISPLAY, va_display);
+      GST_VAAPI_DISPLAY_INIT_FROM_VA_DISPLAY, &new_info);
 }
 
 /**
