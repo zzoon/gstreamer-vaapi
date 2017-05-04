@@ -949,11 +949,12 @@ gst_vaapi_display_create_unlocked (GstVaapiDisplay * display,
     if (!vaapi_initialize (priv->display))
       return FALSE;
   }
-
+#if 0
   if (!cached_info) {
     if (!gst_vaapi_display_cache_add (priv->cache, &info))
       return FALSE;
   }
+#endif
 
   GST_INFO_OBJECT (display, "new display addr=%p", display);
   g_free (priv->display_name);
