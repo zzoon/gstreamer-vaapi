@@ -1408,8 +1408,6 @@ gst_vaapisink_show_frame_unlocked (GstVaapiSink * sink, GstBuffer * src_buffer)
     return ret;
 
   meta = gst_buffer_get_vaapi_video_meta (buffer);
-  GST_VAAPI_PLUGIN_BASE_DISPLAY_REPLACE (sink,
-      gst_vaapi_video_meta_get_display (meta));
 
   proxy = gst_vaapi_video_meta_get_surface_proxy (meta);
   if (!proxy)
